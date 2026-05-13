@@ -2,7 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -112,25 +114,13 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    // Send email
+    // Send email via Resend (HTTP API)
     const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // use SSL
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      family: 4, // Force IPv4
-    });
+    console.log(`📧 Attempting to send reset email via Resend to: ${user.email}`);
 
-    const mailOptions = {
-      from: `"Ethara AI Support" <${process.env.EMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: "Ethara AI <onboarding@resend.dev>", // You can use this for testing
       to: user.email,
       subject: "Password Reset Request",
       html: `
@@ -147,11 +137,13 @@ const forgotPassword = async (req, res) => {
           <p style="font-size: 0.8em; color: #777;">Ethara AI Prompt Manager Team</p>
         </div>
       `,
-    };
+    });
 
-    console.log(`📧 Attempting to send reset email to: ${user.email}`);
-    await transporter.sendMail(mailOptions);
-    console.log("✅ Reset email sent successfully!");
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    console.log("✅ Reset email sent successfully via Resend!", data);
 
     res.status(200).json({ message: "Password reset link sent to your email!" });
   } catch (error) {
