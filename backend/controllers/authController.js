@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -93,4 +95,87 @@ const googleCallback = async (req, res) => {
   res.redirect(`${frontendUrl}/login?token=${token}`);
 };
 
-module.exports = { register, login, getMe, googleCallback };
+// FORGOT PASSWORD
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User with this email does not exist!" });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+    await user.save();
+
+    // Send email
+    const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Ethara AI Support" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Password Reset Request",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+          <h2 style="color: #6366f1; text-align: center;">Reset Your Password</h2>
+          <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
+          <p>Please click on the button below to complete the process:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+          </div>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 0.8em; color: #777;">Ethara AI Prompt Manager Team</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Password reset link sent to your email!" });
+  } catch (error) {
+    res.status(500).json({ message: "Error sending email!", error: error.message });
+  }
+};
+
+// RESET PASSWORD
+const resetPassword = async (req, res) => {
+  try {
+    const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token!" });
+    }
+
+    // Set new password
+    user.password = await bcrypt.hash(req.body.password, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful! You can now log in." });
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
+module.exports = { register, login, getMe, googleCallback, forgotPassword, resetPassword };
