@@ -7,6 +7,8 @@ import AddPrompt from "./pages/AddPrompt";
 import EditPrompt from "./pages/EditPrompt";
 import Analytics from "./pages/Analytics";
 import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Loader from "./components/Loader";
 
 const ProtectedRoute = ({ children }) => {
@@ -20,6 +22,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route
         path="/"
         element={
