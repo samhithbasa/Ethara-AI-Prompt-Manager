@@ -126,6 +126,7 @@ const forgotPassword = async (req, res) => {
       tls: {
         rejectUnauthorized: false,
       },
+      family: 4, // Force IPv4
     });
 
     const mailOptions = {
