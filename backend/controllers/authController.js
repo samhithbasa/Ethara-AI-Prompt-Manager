@@ -143,7 +143,9 @@ const forgotPassword = async (req, res) => {
       `,
     };
 
+    console.log(`📧 Attempting to send reset email to: ${user.email}`);
     await transporter.sendMail(mailOptions);
+    console.log("✅ Reset email sent successfully!");
 
     res.status(200).json({ message: "Password reset link sent to your email!" });
   } catch (error) {
