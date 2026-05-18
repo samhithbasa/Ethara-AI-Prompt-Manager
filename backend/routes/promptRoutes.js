@@ -12,6 +12,7 @@ const {
   updatePromptStatus,
   exportDataset,
   votePrompt,
+  getAdminAnalytics,
 } = require("../controllers/promptController");
 const protect = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
@@ -26,6 +27,7 @@ router.get("/", getAllPrompts);
 // Admin routes (Must be before /:id)
 router.get("/admin/prompts", isAdmin, getAdminPrompts);
 router.get("/admin/export", isAdmin, exportDataset);
+router.get("/admin/analytics", isAdmin, getAdminAnalytics);
 router.patch("/admin/status/:id", isAdmin, updatePromptStatus);
 
 router.get("/:id", getPromptById);

@@ -40,6 +40,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExportDataset = async () => {
+    try {
+      const res = await API.get("/prompts/admin/export", { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'dataset.jsonl');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Dataset exported!");
+    } catch (error) {
+      console.error("Failed to export dataset", error);
+      toast.error("Failed to export dataset!");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Background Effects */}
@@ -61,6 +78,12 @@ const AdminDashboard = () => {
               Review and approve dataset submissions
             </p>
           </div>
+          <button
+            onClick={handleExportDataset}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
+          >
+            <span>🚀</span> Export Dataset (JSONL)
+          </button>
         </div>
 
         {/* Stats Bar / Tabs */}

@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import Navbar from "../components/Navbar";
 import API from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const COLORS = ["#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#6366f1"];
 
 const Analytics = () => {
-  const [data, setData] = useState({ categoryData: [], qualityData: [], total: 0 });
+  const { user } = useAuth();
+  const [data, setData] = useState({ categoryData: [], qualityData: [], statusData: [], total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +37,22 @@ const Analytics = () => {
           count: qualities[name]
         }));
 
-        setData({ categoryData, qualityData, total: prompts.length });
+        let statusData = [];
+        if (user?.role === "admin") {
+          try {
+            const statusRes = await API.get("/prompts/admin/analytics");
+            const counts = statusRes.data.counts;
+            statusData = [
+              { name: "Pending", value: counts.pending },
+              { name: "Approved", value: counts.approved },
+              { name: "Rejected", value: counts.rejected }
+            ];
+          } catch (error) {
+            console.error("Failed to fetch status analytics", error);
+          }
+        }
+
+        setData({ categoryData, qualityData, statusData, total: prompts.length });
       } catch (error) {
         console.error("Failed to fetch analytics data", error);
       } finally {
@@ -79,7 +96,7 @@ const Analytics = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className={`grid grid-cols-1 ${user?.role === 'admin' ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-8`}>
           {/* Category Distribution */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[400px]">
             <h3 className="text-white font-semibold mb-6">Prompts by Category</h3>
@@ -132,6 +149,38 @@ const Analytics = () => {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Status Distribution (Admin Only) */}
+          {user?.role === "admin" && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[400px]">
+              <h3 className="text-white font-semibold mb-6">Status Distribution</h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={data.statusData}
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {data.statusData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.name === "Approved" ? "#10b981" : entry.name === "Pending" ? "#f59e0b" : "#ef4444"} 
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "#1a1a2e", border: "1px solid #ffffff10", borderRadius: "12px" }}
+                      itemStyle={{ color: "#fff" }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

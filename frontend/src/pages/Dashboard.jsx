@@ -123,22 +123,7 @@ const Dashboard = () => {
     reader.readAsText(file);
   };
 
-  const handleExportDataset = async () => {
-    try {
-      const res = await API.get("/prompts/admin/export", { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'dataset.jsonl');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success("Dataset exported!");
-    } catch (error) {
-      console.error("Failed to export dataset", error);
-      toast.error("Failed to export dataset!");
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
@@ -259,14 +244,7 @@ const Dashboard = () => {
                   📤 Import JSON
                   <input type="file" accept=".json" onChange={handleImport} className="hidden" />
                 </label>
-                {user?.role === "admin" && (
-                  <button
-                    onClick={handleExportDataset}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 font-medium"
-                  >
-                    🚀 Export Dataset (JSONL)
-                  </button>
-                )}
+
               </div>
 
               {selectedPrompts.length > 0 && (

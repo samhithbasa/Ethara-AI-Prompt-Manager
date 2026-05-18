@@ -256,6 +256,21 @@ const votePrompt = async (req, res) => {
   }
 };
 
+// GET ADMIN ANALYTICS (Admin only)
+const getAdminAnalytics = async (req, res) => {
+  try {
+    const pendingCount = await Prompt.countDocuments({ status: "pending" });
+    const approvedCount = await Prompt.countDocuments({ status: "approved" });
+    const rejectedCount = await Prompt.countDocuments({ status: "rejected" });
+
+    res.status(200).json({
+      counts: { pending: pendingCount, approved: approvedCount, rejected: rejectedCount }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
 module.exports = {
   createPrompt,
   getAllPrompts,
@@ -268,4 +283,5 @@ module.exports = {
   updatePromptStatus,
   exportDataset,
   votePrompt,
+  getAdminAnalytics,
 };
