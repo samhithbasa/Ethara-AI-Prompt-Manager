@@ -8,7 +8,7 @@ const {
   deletePrompt,
   bulkDeletePrompts,
   importPrompts,
-  getPendingPrompts,
+  getAdminPrompts,
   updatePromptStatus,
   exportDataset,
   votePrompt,
@@ -24,7 +24,7 @@ router.post("/import", importPrompts);
 router.get("/", getAllPrompts);
 
 // Admin routes (Must be before /:id)
-router.get("/admin/pending", isAdmin, getPendingPrompts);
+router.get("/admin/prompts", isAdmin, getAdminPrompts);
 router.get("/admin/export", isAdmin, exportDataset);
 router.patch("/admin/status/:id", isAdmin, updatePromptStatus);
 

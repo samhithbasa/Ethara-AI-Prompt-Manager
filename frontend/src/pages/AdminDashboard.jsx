@@ -3,33 +3,40 @@ import Navbar from "../components/Navbar";
 import PromptCard from "../components/PromptCard";
 import { PromptSkeleton } from "../components/Skeleton";
 import API from "../api/axios";
+import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
   const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("pending");
+  const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
 
-  const fetchPendingPrompts = async () => {
+  const fetchPrompts = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/prompts/admin/pending");
+      const res = await API.get(`/prompts/admin/prompts?status=${status}`);
       setPrompts(res.data.data);
+      setCounts(res.data.counts || { pending: 0, approved: 0, rejected: 0 });
     } catch (error) {
-      console.error("Failed to fetch pending prompts", error);
+      console.error("Failed to fetch prompts", error);
+      toast.error("Failed to fetch prompts!");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPendingPrompts();
-  }, []);
+    fetchPrompts();
+  }, [status]);
 
-  const handleStatusUpdate = async (id, status) => {
+  const handleStatusUpdate = async (id, newStatus) => {
     try {
-      await API.patch(`/prompts/admin/status/${id}`, { status });
-      setPrompts(prompts.filter((p) => p._id !== id));
+      await API.patch(`/prompts/admin/status/${id}`, { status: newStatus });
+      toast.success(`Prompt ${newStatus}!`);
+      fetchPrompts();
     } catch (error) {
-      console.error(`Failed to update status to ${status}`, error);
+      console.error(`Failed to update status to ${newStatus}`, error);
+      toast.error("Failed to update status!");
     }
   };
 
@@ -56,12 +63,41 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-1 gap-4 mb-8">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+        {/* Stats Bar / Tabs */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <button
+            onClick={() => setStatus("pending")}
+            className={`border rounded-2xl p-4 transition-all text-left ${
+              status === "pending"
+                ? "bg-yellow-500/10 border-yellow-500/50"
+                : "bg-white/5 border-white/10 hover:bg-white/10"
+            }`}
+          >
             <p className="text-gray-400 text-sm mb-1">Pending Review</p>
-            <p className="text-3xl font-bold text-yellow-400">{prompts.length}</p>
-          </div>
+            <p className="text-3xl font-bold text-yellow-400">{counts.pending}</p>
+          </button>
+          <button
+            onClick={() => setStatus("approved")}
+            className={`border rounded-2xl p-4 transition-all text-left ${
+              status === "approved"
+                ? "bg-green-500/10 border-green-500/50"
+                : "bg-white/5 border-white/10 hover:bg-white/10"
+            }`}
+          >
+            <p className="text-gray-400 text-sm mb-1">Approved</p>
+            <p className="text-3xl font-bold text-green-400">{counts.approved}</p>
+          </button>
+          <button
+            onClick={() => setStatus("rejected")}
+            className={`border rounded-2xl p-4 transition-all text-left ${
+              status === "rejected"
+                ? "bg-red-500/10 border-red-500/50"
+                : "bg-white/5 border-white/10 hover:bg-white/10"
+            }`}
+          >
+            <p className="text-gray-400 text-sm mb-1">Rejected</p>
+            <p className="text-3xl font-bold text-red-400">{counts.rejected}</p>
+          </button>
         </div>
 
         {/* Prompts Grid */}
@@ -73,14 +109,14 @@ const AdminDashboard = () => {
           </div>
         ) : prompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-              <span className="text-4xl">🎉</span>
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
+              <span className="text-4xl">📭</span>
             </div>
             <h3 className="text-white font-semibold text-xl mb-2">
-              All caught up!
+              No prompts found
             </h3>
             <p className="text-gray-400 text-sm">
-              No pending prompts to review.
+              No prompts in this category yet.
             </p>
           </div>
         ) : (
@@ -89,10 +125,10 @@ const AdminDashboard = () => {
               <PromptCard
                 key={prompt._id}
                 prompt={prompt}
-                isAdminView={true}
+                isAdminView={status === "pending"}
                 onApprove={() => handleStatusUpdate(prompt._id, "approved")}
                 onReject={() => handleStatusUpdate(prompt._id, "rejected")}
-                onVote={fetchPendingPrompts}
+                onVote={fetchPrompts}
               />
             ))}
           </div>

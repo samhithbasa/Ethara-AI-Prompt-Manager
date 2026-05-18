@@ -113,9 +113,11 @@ const Dashboard = () => {
       try {
         const data = JSON.parse(event.target.result);
         await API.post("/prompts/import", { prompts: data });
+        toast.success("Prompts imported successfully!");
         fetchPrompts();
       } catch (error) {
         console.error("Import failed", error);
+        toast.error("Failed to import prompts!");
       }
     };
     reader.readAsText(file);
@@ -159,13 +161,15 @@ const Dashboard = () => {
               Manage your AI training datasets
             </p>
           </div>
-          <button
-            onClick={() => navigate("/add")}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
-          >
-            <span className="text-lg">+</span>
-            Add Prompt
-          </button>
+          {user?.role !== "admin" && (
+            <button
+              onClick={() => navigate("/add")}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 flex items-center gap-2"
+            >
+              <span className="text-lg">+</span>
+              Add Prompt
+            </button>
+          )}
         </div>
 
         {/* Stats Bar */}

@@ -159,11 +159,24 @@ const deletePrompt = async (req, res) => {
   }
 };
 
-// GET PENDING PROMPTS (Admin only)
-const getPendingPrompts = async (req, res) => {
+// GET ADMIN PROMPTS (Admin only)
+const getAdminPrompts = async (req, res) => {
   try {
-    const prompts = await Prompt.find({ status: "pending" }).populate("userId", "name email");
-    res.status(200).json({ data: prompts });
+    const { status = "pending" } = req.query;
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status!" });
+    }
+
+    const prompts = await Prompt.find({ status }).populate("userId", "name email").sort({ createdAt: -1 });
+    
+    const pendingCount = await Prompt.countDocuments({ status: "pending" });
+    const approvedCount = await Prompt.countDocuments({ status: "approved" });
+    const rejectedCount = await Prompt.countDocuments({ status: "rejected" });
+
+    res.status(200).json({ 
+      data: prompts,
+      counts: { pending: pendingCount, approved: approvedCount, rejected: rejectedCount }
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error!", error: error.message });
   }
@@ -251,7 +264,7 @@ module.exports = {
   deletePrompt,
   bulkDeletePrompts,
   importPrompts,
-  getPendingPrompts,
+  getAdminPrompts,
   updatePromptStatus,
   exportDataset,
   votePrompt,
