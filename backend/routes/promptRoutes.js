@@ -22,14 +22,15 @@ router.post("/", createPrompt);
 router.post("/bulk-delete", bulkDeletePrompts);
 router.post("/import", importPrompts);
 router.get("/", getAllPrompts);
+
+// Admin routes (Must be before /:id)
+router.get("/admin/pending", isAdmin, getPendingPrompts);
+router.get("/admin/export", isAdmin, exportDataset);
+router.patch("/admin/status/:id", isAdmin, updatePromptStatus);
+
 router.get("/:id", getPromptById);
 router.put("/:id", updatePrompt);
 router.delete("/:id", deletePrompt);
-
-// Admin routes
-router.get("/admin/pending", isAdmin, getPendingPrompts);
-router.patch("/admin/status/:id", isAdmin, updatePromptStatus);
-router.get("/admin/export", isAdmin, exportDataset);
 
 // Voting route
 router.post("/:id/vote", votePrompt);
