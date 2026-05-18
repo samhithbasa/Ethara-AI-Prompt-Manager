@@ -17,7 +17,7 @@ const qualityColors = {
   Poor: "bg-red-500/10 text-red-400 border-red-500/20",
 };
 
-const PromptCard = ({ prompt, onDelete, selected, onSelect }) => {
+const PromptCard = ({ prompt, onDelete, selected, onSelect, isAdminView, onApprove, onReject, onVote }) => {
   const navigate = useNavigate();
 
   const handleDelete = async () => {
@@ -58,6 +58,17 @@ const PromptCard = ({ prompt, onDelete, selected, onSelect }) => {
     e.stopPropagation();
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied!`);
+  };
+
+  const handleVote = async (e, type) => {
+    e.stopPropagation();
+    try {
+      await API.post(`/prompts/${prompt._id}/vote`, { type });
+      toast.success(`Voted ${type}!`);
+      if (onVote) onVote(); // Refresh list if needed
+    } catch (error) {
+      toast.error("Failed to vote!");
+    }
   };
 
   return (
@@ -135,22 +146,60 @@ const PromptCard = ({ prompt, onDelete, selected, onSelect }) => {
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-white/10">
-        <span className="text-gray-500 text-xs">
-          {new Date(prompt.createdAt).toLocaleDateString()}
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-500 text-xs">
+            {new Date(prompt.createdAt).toLocaleDateString()}
+          </span>
+          
+          {/* Voting */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => handleVote(e, "upvote")}
+              className="text-gray-400 hover:text-green-400 text-xs flex items-center gap-1 transition-colors"
+            >
+              👍 {prompt.upvotes?.length || 0}
+            </button>
+            <button
+              onClick={(e) => handleVote(e, "downvote")}
+              className="text-gray-400 hover:text-red-400 text-xs flex items-center gap-1 transition-colors"
+            >
+              👎 {prompt.downvotes?.length || 0}
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); navigate(`/edit/${prompt._id}`); }}
-            className="bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
-          >
-            Edit
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-            className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
-          >
-            Delete
-          </button>
+          {isAdminView ? (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onApprove(); }}
+                className="bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
+              >
+                Approve
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onReject(); }}
+                className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
+              >
+                Reject
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/edit/${prompt._id}`); }}
+                className="bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
+              >
+                Edit
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded-lg transition-all duration-200"
+              >
+                Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

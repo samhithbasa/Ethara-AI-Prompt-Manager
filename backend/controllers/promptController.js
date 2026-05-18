@@ -125,7 +125,7 @@ const updatePrompt = async (req, res) => {
     const updatedPrompt = await Prompt.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { returnDocument: "after" }
     );
 
     res.status(200).json({
@@ -159,6 +159,90 @@ const deletePrompt = async (req, res) => {
   }
 };
 
+// GET PENDING PROMPTS (Admin only)
+const getPendingPrompts = async (req, res) => {
+  try {
+    const prompts = await Prompt.find({ status: "pending" }).populate("userId", "name email");
+    res.status(200).json({ data: prompts });
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
+// UPDATE PROMPT STATUS (Admin only)
+const updatePromptStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status!" });
+    }
+
+    const prompt = await Prompt.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { returnDocument: "after" }
+    );
+
+    if (!prompt) {
+      return res.status(404).json({ message: "Prompt not found!" });
+    }
+
+    res.status(200).json({ message: `Prompt ${status} successfully!`, data: prompt });
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
+// EXPORT DATASET (Admin only)
+const exportDataset = async (req, res) => {
+  try {
+    const prompts = await Prompt.find({ status: "approved" });
+    
+    const jsonlData = prompts.map(p => JSON.stringify({
+      prompt: p.prompt,
+      response: p.response,
+      category: p.category,
+      quality: p.quality,
+      tags: p.tags
+    })).join("\n");
+
+    res.setHeader("Content-Type", "application/x-jsonlines");
+    res.setHeader("Content-Disposition", "attachment; filename=dataset.jsonl");
+    res.status(200).send(jsonlData);
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
+// VOTE PROMPT
+const votePrompt = async (req, res) => {
+  try {
+    const { type } = req.body;
+    const prompt = await Prompt.findById(req.params.id);
+
+    if (!prompt) {
+      return res.status(404).json({ message: "Prompt not found!" });
+    }
+
+    const userId = req.user.id;
+
+    prompt.upvotes = prompt.upvotes.filter(id => id.toString() !== userId);
+    prompt.downvotes = prompt.downvotes.filter(id => id.toString() !== userId);
+
+    if (type === "upvote") {
+      prompt.upvotes.push(userId);
+    } else if (type === "downvote") {
+      prompt.downvotes.push(userId);
+    }
+
+    await prompt.save();
+
+    res.status(200).json({ message: "Vote registered!", data: prompt });
+  } catch (error) {
+    res.status(500).json({ message: "Server error!", error: error.message });
+  }
+};
+
 module.exports = {
   createPrompt,
   getAllPrompts,
@@ -167,4 +251,8 @@ module.exports = {
   deletePrompt,
   bulkDeletePrompts,
   importPrompts,
+  getPendingPrompts,
+  updatePromptStatus,
+  exportDataset,
+  votePrompt,
 };

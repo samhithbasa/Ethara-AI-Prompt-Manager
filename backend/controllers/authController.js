@@ -32,6 +32,7 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role: email === "samhithbasa12@gmail.com" ? "admin" : "user",
     });
 
     res.status(201).json({
@@ -41,6 +42,7 @@ const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -72,6 +74,7 @@ const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {

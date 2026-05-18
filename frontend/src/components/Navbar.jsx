@@ -28,6 +28,9 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-6">
           <button onClick={() => navigate("/")} className="text-gray-400 hover:text-white text-sm transition-all">Dashboard</button>
           <button onClick={() => navigate("/analytics")} className="text-gray-400 hover:text-white text-sm transition-all">Analytics</button>
+          {user?.role === "admin" && (
+            <button onClick={() => navigate("/admin")} className="text-yellow-400 hover:text-yellow-300 text-sm transition-all font-medium">Admin</button>
+          )}
         </div>
 
         {/* Right Side */}
