@@ -17,6 +17,12 @@ const qualityColors = {
   Poor: "bg-red-500/10 text-red-400 border-red-500/20",
 };
 
+const statusColors = {
+  pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  approved: "bg-green-500/10 text-green-400 border-green-500/20",
+  rejected: "bg-red-500/10 text-red-400 border-red-500/20",
+};
+
 const PromptCard = ({ prompt, onDelete, selected, onSelect, isAdminView, onApprove, onReject, onVote }) => {
   const navigate = useNavigate();
 
@@ -94,6 +100,11 @@ const PromptCard = ({ prompt, onDelete, selected, onSelect, isAdminView, onAppro
             <span className={`text-xs border px-2 py-0.5 rounded-full ${qualityColors[prompt.quality]}`}>
               {prompt.quality}
             </span>
+            {!isAdminView && (
+              <span className={`text-xs border px-2 py-0.5 rounded-full ${statusColors[prompt.status]}`}>
+                {prompt.status === "approved" ? "Approved by Admin" : prompt.status === "rejected" ? "Rejected by Admin" : "Pending Review"}
+              </span>
+            )}
           </div>
         </div>
       </div>
