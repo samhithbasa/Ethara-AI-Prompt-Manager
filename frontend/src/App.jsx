@@ -24,6 +24,14 @@ const AdminRoute = ({ children }) => {
   return user && user.role === "admin" ? children : <Navigate to="/" />;
 };
 
+const DashboardRoute = () => {
+  const { user } = useAuth();
+  if (user && user.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+  return <Dashboard />;
+};
+
 function App() {
   return (
     <Routes>
@@ -35,7 +43,7 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardRoute />
           </ProtectedRoute>
         }
       />

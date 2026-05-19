@@ -25,7 +25,11 @@ const Signup = () => {
     try {
       const res = await API.post("/auth/register", formData);
       login(res.data.user, res.data.token);
-      navigate("/");
+      if (res.data.user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong!");
     } finally {
